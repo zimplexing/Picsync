@@ -56,7 +56,9 @@ cargo clippy --locked --all-targets -- -D warnings
 cargo build --release --locked
 ```
 
-完整发布包生成方式见 `scripts/build.ps1`（含格式检查、40 项自动化测试、Clippy、Release 构建、依赖许可收集和 ZIP 打包）。发布采用静态 CRT；使用系统 Windows/OpenGL 组件，正常使用不需要安装 Rust 或 .NET。`picsync.exe --smoke-test` 启动图形界面并在约两秒后自动退出，用于构建后的启动检查。
+完整发布包生成方式见 `scripts/build.ps1`（含格式检查、43 项自动化测试、Clippy、Release 构建、依赖许可收集和 ZIP 打包）。发布采用静态 CRT；使用系统 Windows/OpenGL 组件，正常使用不需要安装 Rust 或 .NET。`picsync.exe --smoke-test` 启动图形界面并在约两秒后自动退出，用于构建后的启动检查。
+
+构建会把应用图标和版本信息写入 `picsync.exe`（资源管理器、任务栏和窗口标题图标一致，属性中显示“Picsync 图片时光归档”）。这一步调用 Windows SDK 的 `rc.exe`，可用环境变量 `PICSYNC_RC` 指定；如果找不到，构建仍会成功，只是 exe 不带图标。图标与应用内左上角标识由 `src/icon.rs` 中的同一段代码绘制。
 
 `scripts/e2e.ps1` 在真实的临时目录和真实窗口中执行“扫描 → 复制 → 再次运行去重”的界面级验证，并断言源文件哈希未变、日期筛选与归档目录正确。它只操作项目内的 `.e2e` 目录以及 `%LOCALAPPDATA%\Picsync` 配置，运行前请确认后者没有你需要保留的配置。
 
