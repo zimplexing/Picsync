@@ -2,6 +2,8 @@
 
 中文 Windows 图片整理工具。按一天或日期范围筛选图片，复制到目标目录的每日文件夹，不移动、不删除原图。图片只在本机处理，不上传。
 
+[应用介绍](https://zimplexing.github.io/Picsync/) · [下载 Windows x64 版本](https://github.com/zimplexing/Picsync/releases/latest)
+
 ![界面预览](docs/screenshot.png)
 
 ## 使用
