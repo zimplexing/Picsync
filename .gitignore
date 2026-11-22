@@ -1,0 +1,11 @@
+/target/
+/.tools/
+/dist/
+/.e2e/
+/ui-*.png
+/probe-*.png
+/diag-*.png
+/step*.png
+/build-test.log
+/build-release.log
+/clippy.log
