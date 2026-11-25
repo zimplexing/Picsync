@@ -21,23 +21,23 @@ jobs:
           rustup toolchain install 1.85.1-x86_64-pc-windows-msvc --profile minimal --component rustfmt --component clippy
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           rustup override set 1.85.1-x86_64-pc-windows-msvc
-      - name: Check and build
+      - name: Check, build, and package
         shell: pwsh
         run: |
-          cargo fmt --all -- --check
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo test --locked
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo clippy --locked --all-targets -- -D warnings
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo build --release --locked
-      - name: Publish EXE and SHA-256 checksum
+          ./scripts/build.ps1
+      - name: Publish Release package, EXE, and SHA-256 checksums
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          $exe = 'target/release/picsync.exe'
-          $hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  picsync.exe" | Set-Content -LiteralPath SHA256SUMS.txt -Encoding ascii
-          gh release create $env:GITHUB_REF_NAME $exe SHA256SUMS.txt --verify-tag --generate-notes
+          $zip = Get-ChildItem -LiteralPath dist -Filter 'Picsync-*-windows-x64.zip' | Select-Object -First 1
+          if (-not $zip) { throw 'Release zip archive not found in dist/' }
+          $exe = Get-Item -LiteralPath 'target/release/picsync.exe'
+          $zipHash = (Get-FileHash -LiteralPath $zip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $exeHash = (Get-FileHash -LiteralPath $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          @(
+            "$zipHash  $($zip.Name)"
+            "$exeHash  picsync.exe"
+          ) | Set-Content -LiteralPath SHA256SUMS.txt -Encoding ascii
+          gh release create $env:GITHUB_REF_NAME $zip.FullName $exe.FullName SHA256SUMS.txt --verify-tag --generate-notes

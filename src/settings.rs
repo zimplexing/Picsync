@@ -26,6 +26,11 @@ impl Default for Settings {
 }
 
 pub fn data_directory() -> Result<PathBuf, String> {
+    if let Some(override_dir) = std::env::var_os("PICSYNC_DATA_DIR") {
+        if !override_dir.is_empty() {
+            return Ok(PathBuf::from(override_dir));
+        }
+    }
     directories::BaseDirs::new()
         .map(|b| b.data_local_dir().join("Picsync"))
         .ok_or_else(|| "无法确定当前用户的 LocalAppData 目录".to_owned())

@@ -1,4 +1,4 @@
-param([string]$Root = 'F:\Project\Picsync')
+param([string]$Root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 Add-Type @'
@@ -66,27 +66,33 @@ function Invoke-Run([string]$Tag) {
     if (-not $process.HasExited) { $process.Kill() }
 }
 
+$today = (Get-Date).Date
+$todayText = $today.ToString('yyyy-MM-dd')
+$olderDay = $today.AddDays(-2)
+$olderText = $olderDay.ToString('yyyy-MM-dd')
+
 $e2e = Join-Path $Root '.e2e'
 Remove-Item $e2e -Recurse -Force -ErrorAction SilentlyContinue
 $source = Join-Path $e2e 'source'; $destination = Join-Path $e2e 'dest'
+$configDir = Join-Path $e2e 'config'
 New-Item -ItemType Directory -Force (Join-Path $source 'sub') | Out-Null
+New-Item -ItemType Directory -Force $configDir | Out-Null
 foreach ($spec in @(@('a.jpg', 'sub'), @('b.PNG', ''), @('old.jpg', ''), @('notes.txt', ''))) {
     $file = Join-Path (Join-Path $source $spec[1]) $spec[0]
     [System.IO.File]::WriteAllBytes($file, [System.Text.Encoding]::UTF8.GetBytes("content-$($spec[0])"))
-    (Get-Item $file).LastWriteTime = if ($spec[0] -eq 'old.jpg') { Get-Date '2026-11-20 09:00:00' } else { Get-Date '2026-11-22 10:00:00' }
+    (Get-Item $file).LastWriteTime = if ($spec[0] -eq 'old.jpg') { $olderDay.AddHours(9) } else { $today.AddHours(10) }
 }
-$configDir = Join-Path $env:LOCALAPPDATA 'Picsync'
-New-Item -ItemType Directory -Force $configDir | Out-Null
 [ordered]@{ version = 1; source = $source; destination = $destination; recursive = $true; basis = 'Modified' } |
     ConvertTo-Json | Set-Content (Join-Path $configDir 'settings.json') -Encoding utf8
+$env:PICSYNC_DATA_DIR = $configDir
 
 Invoke-Run 'first'
-$day = Join-Path $destination '2026-11-22'
+$day = Join-Path $destination $todayText
 $first = @(Get-ChildItem $day -File | Sort-Object Name)
 Write-Output "first_run_files=$($first.Name -join ',')"
 Write-Output "first_hash_a=$((Get-FileHash (Join-Path $day 'a.jpg')).Hash)"
 Write-Output "source_unmodified=$((Get-FileHash (Join-Path $source 'sub\a.jpg')).Hash -eq (Get-FileHash (Join-Path $day 'a.jpg')).Hash)"
-Write-Output "old_excluded=$(-not (Test-Path (Join-Path $destination '2026-11-20')))"
+Write-Output "old_excluded=$(-not (Test-Path (Join-Path $destination $olderText)))"
 Write-Output "no_subfolder=$(-not (Test-Path (Join-Path $day 'sub')))"
 
 Invoke-Run 'second'

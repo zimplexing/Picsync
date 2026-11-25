@@ -62,11 +62,10 @@ cargo build --release --locked
 
 构建会把应用图标和版本信息写入 `picsync.exe`（资源管理器、任务栏和窗口标题图标一致，属性中显示“Picsync 图片时光归档”）。这一步调用 Windows SDK 的 `rc.exe`，可用环境变量 `PICSYNC_RC` 指定；如果找不到，构建仍会成功，只是 exe 不带图标。图标与应用内左上角标识由 `src/icon.rs` 中的同一段代码绘制。
 
-`scripts/e2e.ps1` 在真实的临时目录和真实窗口中执行“扫描 → 复制 → 再次运行去重”的界面级验证，并断言源文件哈希未变、日期筛选与归档目录正确。它只操作项目内的 `.e2e` 目录以及 `%LOCALAPPDATA%\Picsync` 配置，运行前请确认后者没有你需要保留的配置。
+`scripts/e2e.ps1` 在真实的临时目录和真实窗口中执行“扫描 → 复制 → 再次运行去重”的界面级验证，并断言源文件哈希未变、日期筛选与归档目录正确。它通过 `PICSYNC_DATA_DIR` 将配置与日志隔离在项目内的 `.e2e` 目录中，不会修改本机 `%LOCALAPPDATA%\Picsync` 下的真实配置。
 
 ## 字体与第三方许可
 
-中文字体为 Noto Sans SC，字体文件来源：
-https://github.com/google/fonts/tree/main/ofl/notosanssc
+界面运行时加载 Windows 系统默认中文字体（优先微软雅黑 `msyh.ttc`，依次回退等线、黑体、宋体），不向可执行文件内嵌中文字体。
 
-遵循 SIL Open Font License 1.1，发布包附 `OFL.txt`。Rust 依赖及默认字体的许可信息由打包脚本收集至 `THIRD_PARTY_NOTICES.txt`。应用源码采用 MIT 许可。
+Rust 依赖及默认字体的许可信息由打包脚本收集至 `THIRD_PARTY_NOTICES.txt`。应用源码采用 MIT 许可。

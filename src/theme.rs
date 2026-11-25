@@ -43,22 +43,21 @@ const WIDGET_RADIUS: u8 = 9;
 /// Install fonts, force the light theme and apply Picsync's style.
 pub fn install(ctx: &egui::Context) {
     let mut fonts = egui::FontDefinitions::default();
-    fonts.font_data.insert(
-        "NotoSansSC".to_owned(),
-        Arc::new(egui::FontData::from_static(include_bytes!(
-            "../assets/NotoSansSC.ttf"
-        ))),
-    );
-    fonts
-        .families
-        .entry(FontFamily::Proportional)
-        .or_default()
-        .insert(0, "NotoSansSC".to_owned());
-    fonts
-        .families
-        .entry(FontFamily::Monospace)
-        .or_default()
-        .push("NotoSansSC".to_owned());
+    if let Some((name, bytes)) = load_system_chinese_font() {
+        fonts
+            .font_data
+            .insert(name.to_owned(), Arc::new(egui::FontData::from_owned(bytes)));
+        fonts
+            .families
+            .entry(FontFamily::Proportional)
+            .or_default()
+            .insert(0, name.to_owned());
+        fonts
+            .families
+            .entry(FontFamily::Monospace)
+            .or_default()
+            .push(name.to_owned());
+    }
     ctx.set_fonts(fonts);
 
     // The app is designed light-only: pin the theme so a dark Windows session
@@ -432,4 +431,48 @@ pub fn segment_group<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R)
             ui.horizontal(add).inner
         })
         .inner
+}
+
+/// Load the default Windows Chinese UI font at runtime so the executable does
+/// not need to embed a multi-megabyte CJK font file.
+fn load_system_chinese_font() -> Option<(&'static str, Vec<u8>)> {
+    #[cfg(windows)]
+    {
+        use std::path::PathBuf;
+
+        let windir = std::env::var_os("WINDIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(r"C:\Windows"));
+        let fonts_dir = windir.join("Fonts");
+        const CANDIDATES: [(&str, &str); 5] = [
+            ("MicrosoftYaHei", "msyh.ttc"),
+            ("MicrosoftYaHei", "msyh.ttf"),
+            ("DengXian", "Deng.ttf"),
+            ("SimHei", "simhei.ttf"),
+            ("SimSun", "simsun.ttc"),
+        ];
+        for (name, file) in CANDIDATES {
+            if let Ok(bytes) = std::fs::read(fonts_dir.join(file)) {
+                return Some((name, bytes));
+            }
+        }
+        None
+    }
+    #[cfg(not(windows))]
+    {
+        None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(windows)]
+    #[test]
+    fn finds_default_windows_chinese_font() {
+        let (name, bytes) = load_system_chinese_font().expect("Windows CJK font should exist");
+        assert!(!name.is_empty());
+        assert!(!bytes.is_empty());
+    }
 }

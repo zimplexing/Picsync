@@ -1,4 +1,4 @@
-param([switch]$SkipChecks)
+﻿param([switch]$SkipChecks)
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 
@@ -25,7 +25,6 @@ New-Item -ItemType Directory -Force $package | Out-Null
 Copy-Item 'target\release\picsync.exe' (Join-Path $package 'picsync.exe') -Force
 Copy-Item 'README.md' (Join-Path $package '使用说明.md') -Force
 Copy-Item 'LICENSE' (Join-Path $package 'LICENSE.txt') -Force
-Copy-Item 'assets\OFL.txt' (Join-Path $package 'OFL.txt') -Force
 if (Test-Path 'docs\screenshot.png') {
     New-Item -ItemType Directory -Force (Join-Path $package 'docs') | Out-Null
     Copy-Item 'docs\screenshot.png' (Join-Path $package 'docs\screenshot.png') -Force
@@ -60,7 +59,7 @@ foreach ($dep in ($dependencies | Sort-Object name, version)) {
 }
 $unresolved = @()
 $notices = [System.Text.StringBuilder]::new()
-[void]$notices.AppendLine('Picsync third-party notices. Application source: MIT. Noto Sans SC: see OFL.txt.')
+[void]$notices.AppendLine('Picsync third-party notices. Application source: MIT. UI uses the system default Windows Chinese font at runtime.')
 foreach ($entry in $entries) {
     $dep = $entry.Dep
     [void]$notices.AppendLine("`n============================================================")
